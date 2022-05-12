@@ -90,22 +90,38 @@ class CrossingGame:
         game_over = False
         if self.game_over_check():
             game_over = True
-            return game_over, self.score
+            reward=-1
+            return reward, game_over, self.score
         
         # update score
-        if self.score<self.player.x/BLOCK_SIZE: self.score=self.player.x//BLOCK_SIZE 
+        if self.score<self.player.x/BLOCK_SIZE: self.score=self.player.x//BLOCK_SIZE
+        reward=1
         
         # update display and clock
         self.update_display()
         self.clock.tick(SPEED)
         
         # return game over and score
-        return game_over, self.score
+        return reward, game_over, self.score
     
-    def game_over_check(self):
+    
+    def is_collision(self, block=None):
+        if block is None:
+            block = self.head
+        # end of screen hit
+        if block.x > self.window_x - 20 or block.x < 0 or block.y > self.window_y - 20 or block.y < 0:
+            return True
+        # body hit
+        if block in self.snake_body[1:]:
+            return True
+
+        return False
+    
+    def game_over_check(self, block=None):
+        if block is None: block=self.player
         for wall in self.walls:
-            if self.player in wall: return True
-        if self.player.x<0 or self.player.x>860: return True
+            if block in wall: return True
+        if block.x<0 or block.x>860: return True
         return False
         
     def update_display(self):
