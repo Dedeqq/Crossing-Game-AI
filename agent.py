@@ -4,28 +4,7 @@ import numpy as np
 from collections import deque
 from corss_game_ai import CrossingGame, Square
 from nn_model import Linear_QNet, QTrainer
-import matplotlib.pyplot as plt
 
-"""
-from IPython import display
-
-plt.ion()
-
-def plot(scores, mean_scores):
-    display.clear_output(wait=True)
-    display.display(plt.gcf())
-    plt.clf()
-    plt.title('Training...')
-    plt.xlabel('Number of Games')
-    plt.ylabel('Score')
-    plt.plot(scores)
-    plt.plot(mean_scores)
-    plt.ylim(ymin=0)
-    plt.text(len(scores)-1, scores[-1], str(scores[-1]))
-    plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
-    plt.show(block=False)
-    plt.pause(.1)
-"""
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
@@ -37,16 +16,21 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(9, 256, 3)
+        self.model = Linear_QNet(14, 256, 4)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
     def get_state(self, game):
         head = game.player
-        Square_l = Square(head.x - 20, head.y)
-        Square_r = Square(head.x + 20, head.y)
-        Square_u = Square(head.x, head.y - 20)
-        Square_d = Square(head.x, head.y + 20)
+        Square_l1 = Square(head.x - 20, head.y-80)
+        Square_l2 = Square(head.x - 20, head.y-60)
+        Square_l3 = Square(head.x - 20, head.y-40)
+        Square_l4 = Square(head.x - 20, head.y-20)
+        Square_r1 = Square(head.x + 20, head.y-80)
+        Square_r2 = Square(head.x + 20, head.y-60)
+        Square_r3 = Square(head.x + 20, head.y-40)
+        Square_r4 = Square(head.x + 20, head.y-20)
+        Square_u = Square(head.x, head.y-20)
         
         dir_l = game.player_direction == game.directions["left"]
         dir_r = game.player_direction== game.directions["right"]
@@ -54,29 +38,27 @@ class Agent:
         dir_d = game.player_direction== game.directions["down"]
 
         state = [
-            # Danger right
-            (dir_u and game.game_over_check(Square_r)) or 
-            (dir_d and game.game_over_check(Square_r)) or 
-            (dir_l and game.game_over_check(Square_r)) or 
-            (dir_r and game.game_over_check(Square_r)),
+            # Danger left 1
+            game.game_over_check(Square_l1),
+            # Danger left 2
+            game.game_over_check(Square_l2),
+            # Danger left 3
+            game.game_over_check(Square_l3),
+            # Danger left 4
+            game.game_over_check(Square_l4),
             
-            # Danger down
-            (dir_r and game.game_over_check(Square_d)) or 
-            (dir_l and game.game_over_check(Square_d)) or 
-            (dir_u and game.game_over_check(Square_d)) or 
-            (dir_d and game.game_over_check(Square_d)),
-            
-            # Danger left
-            (dir_d and game.game_over_check(Square_l)) or 
-            (dir_u and game.game_over_check(Square_l)) or 
-            (dir_r and game.game_over_check(Square_l)) or 
-            (dir_l and game.game_over_check(Square_l)),
+            # Danger right 1
+            game.game_over_check(Square_r1),
+            # Danger right 2
+            game.game_over_check(Square_r2),
+            # Danger right 3
+            game.game_over_check(Square_r3),
+            # Danger right 4
+            game.game_over_check(Square_r4),
             
             # Danger up
-            (dir_d and game.game_over_check(Square_u)) or 
-            (dir_u and game.game_over_check(Square_u)) or 
-            (dir_r and game.game_over_check(Square_u)) or 
-            (dir_l and game.game_over_check(Square_u)),
+            game.game_over_check(Square_u),            
+            
             
             # Move direction
             dir_l,
@@ -123,8 +105,6 @@ class Agent:
 
 
 def train():
-    plot_scores = []
-    plot_mean_scores = []
     total_score = 0
     record = 0
     agent = Agent()
@@ -147,7 +127,7 @@ def train():
         agent.remember(state_old, finalmove, reward, state_new, done)
 
         if done:
-            # train long memory, plot result
+            # train long memory
             game.reset_game()
             agent.n_games += 1
             agent.train_long_memory()
@@ -155,13 +135,6 @@ def train():
             if score > record: record = score
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
-"""
-            plot_scores.append(score)
-            total_score += score
-            mean_score = total_score / agent.n_games
-            plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores)"""
-
 
 if __name__ == '__main__':
     train()
