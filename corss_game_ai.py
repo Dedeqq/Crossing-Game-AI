@@ -16,7 +16,7 @@ BLACK = (0,0,0)
 
 
 BLOCK_SIZE = 20
-SPEED = 20
+SPEED = 10
 
 class CrossingGame:
     
@@ -50,7 +50,7 @@ class CrossingGame:
         
         # no infinite games
         self.number_of_moves=0
-    
+    """
     def place_wall(self, x):
         # create walls
         wall=[]
@@ -58,22 +58,29 @@ class CrossingGame:
         empty=random.randint(0,1)
         while length<self.height-BLOCK_SIZE:
             empty=(empty+1)%2
-            size=random.randint(2,3)
+            if empty==0:
+                for i in range(2): 
+                    wall.append(Square(x, length))
+                    length+=BLOCK_SIZE
+            else: length+=2*BLOCK_SIZE
+        return wall      """              
+       
+    def place_wall(self, x):
+        # create walls
+        wall=[]
+        length=0
+        empty=random.randint(0,1)
+        while length<self.height-BLOCK_SIZE:
+            empty=(empty+1)%2
+            size=random.randint(3,6)
             if empty==0:
                 for i in range(size):
-                    if length==self.height-2*BLOCK_SIZE: return wall
+                    if length==self.height: return wall
                     wall.append(Square(x, length))
                     length+=BLOCK_SIZE
             else: length+=size*BLOCK_SIZE
         return wall
-            
-    def move_wall(self, wall):
-        # move wall by one block
-        helper=[]
-        for square in wall: helper.append(Square(square.x, (square.y+BLOCK_SIZE)%self.height))
-        return helper
-                    
-        
+    
     def next_frame(self, action):
         self.number_of_moves+=1
         # collect user input
@@ -82,9 +89,8 @@ class CrossingGame:
                 pygame.quit()
                 quit()
 
-        # move walls and player
+        # move player
         self.player_move(action)
-        self.walls=[self.move_wall(wall) for wall in self.walls]
         
         # check for collisions
         reward=0
@@ -103,6 +109,10 @@ class CrossingGame:
         if self.score<self.player.x/BLOCK_SIZE: 
             self.score=self.player.x//BLOCK_SIZE
             reward=10
+        
+        if self.player_direction==self.directions["left"]: 
+            reward=-10
+
         
         # update display and clock
         self.update_display()

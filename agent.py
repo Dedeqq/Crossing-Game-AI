@@ -16,48 +16,40 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.9 # discount rate
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = Linear_QNet(14, 256, 4)
+        self.model = Linear_QNet(9, 512, 4)       
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
 
     def get_state(self, game):
         head = game.player
-        Square_l1 = Square(head.x - 20, head.y-80)
-        Square_l2 = Square(head.x - 20, head.y-60)
-        Square_l3 = Square(head.x - 20, head.y-40)
-        Square_l4 = Square(head.x - 20, head.y-20)
-        Square_r1 = Square(head.x + 20, head.y-80)
-        Square_r2 = Square(head.x + 20, head.y-60)
-        Square_r3 = Square(head.x + 20, head.y-40)
-        Square_r4 = Square(head.x + 20, head.y-20)
+        Square_l = Square(head.x - 20, head.y)        
+
+        Square_r = Square(head.x + 20, head.y)
+        
         Square_u = Square(head.x, head.y-20)
+        
+        Square_d = Square(head.x, head.y+20)
         
         dir_l = game.player_direction == game.directions["left"]
         dir_r = game.player_direction== game.directions["right"]
         dir_u = game.player_direction== game.directions["up"]
         dir_d = game.player_direction== game.directions["down"]
+        
+        
 
         state = [
-            # Danger left 1
-            game.game_over_check(Square_l1),
-            # Danger left 2
-            game.game_over_check(Square_l2),
-            # Danger left 3
-            game.game_over_check(Square_l3),
-            # Danger left 4
-            game.game_over_check(Square_l4),
+
             
             # Danger right 1
-            game.game_over_check(Square_r1),
+            game.game_over_check(Square_r),
             # Danger right 2
-            game.game_over_check(Square_r2),
-            # Danger right 3
-            game.game_over_check(Square_r3),
-            # Danger right 4
-            game.game_over_check(Square_r4),
+            game.game_over_check(Square_l),
             
             # Danger up
-            game.game_over_check(Square_u),            
+            game.game_over_check(Square_u),     
+            
+            # Danger down
+            game.game_over_check(Square_d),  
             
             
             # Move direction
@@ -66,8 +58,9 @@ class Agent:
             dir_u,
             dir_d,
             
-            # Distance from finish lane
-            (860-game.player.x)/20]
+            # DIstance from finish line
+            (860-game.player.x)//20
+            ]
 
         return np.array(state, dtype=int)
 
@@ -82,17 +75,15 @@ class Agent:
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
         self.trainer.train_step(states, actions, rewards, next_states, dones)
-        #for state, action, reward, nexrt_state, done in mini_sample:
-        #    self.trainer.train_step(state, action, reward, next_state, done)
 
     def train_short_memory(self, state, action, reward, next_state, done):
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
         # random moves: tradeoff exploration / exploitation
-        self.epsilon = 80 - self.n_games
+        self.epsilon = 50 - self.n_games
         finalmove = [0,0,0,0]
-        if random.randint(0, 200) < self.epsilon:
+        if random.randint(0, 100) < self.epsilon:
             move = random.randint(0, 3)
             finalmove[move] = 1
         else:
@@ -105,11 +96,11 @@ class Agent:
 
 
 def train():
-    total_score = 0
     record = 0
     agent = Agent()
     game = CrossingGame()
-    while True:
+    counter=0
+    while counter<30:
         # get old state
         state_old = agent.get_state(game)
 
@@ -133,8 +124,13 @@ def train():
             agent.train_long_memory()
 
             if score > record: record = score
+            if score==42: counter+=1
+            else: counter=0
 
-            print('Game', agent.n_games, 'Score', score, 'Record:', record)
+            
+
+            print('Game', agent.n_games, 'Score', score, 'Record:', record, 'Counter:', counter)
+    
 
 if __name__ == '__main__':
     train()
